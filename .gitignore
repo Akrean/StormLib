@@ -6,6 +6,7 @@
 .project
 .metadata
 bin/
+build/
 tmp/
 *.tmp
 *.bak
@@ -64,6 +65,8 @@ local.properties
 *.dotCover
 *.o
 *.dylib
+*.VC.db
+*.VC.VC.opendb
 
 ## TODO: If you have NuGet Package Restore enabled, uncomment this
 #packages/
