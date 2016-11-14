@@ -571,19 +571,17 @@ namespace stormlib
 		void initialize(const std::shared_ptr<istream_provider_factory>& factory);
 
 	public:
-		archive();
-		archive(const archive& other);
+		archive(const std::shared_ptr<istream_provider_factory>& factory, t_cstr mpqName, base_provider baseProvider, stream_provider streamProvider, stream_flag stream);
+		archive(const std::shared_ptr<istream_provider_factory>& factory, t_cstr mpqName, mpq_create_flag flags, std::uint32_t maxFileCount);
+		archive(const std::shared_ptr<istream_provider_factory>& factory, t_cstr mpqName, const create_mpq& data);
+		archive(const std::shared_ptr<istream_provider_factory>& factory, const tstring& mpqName, base_provider baseProvider, stream_provider streamProvider, stream_flag stream);
+		archive(const std::shared_ptr<istream_provider_factory>& factory, const tstring& mpqName, mpq_create_flag flags, std::uint32_t maxFileCount);
+		archive(const std::shared_ptr<istream_provider_factory>& factory, const tstring& mpqName, const create_mpq& data);
+		archive(const stormlib::archive& other);
 		archive(archive&& other);
-		archive& operator=(const archive& other);
+		archive& operator=(const stormlib::archive& other);
 		archive& operator=(archive&& other);
 		~archive();
-
-		static archive open(const std::shared_ptr<istream_provider_factory>& factory, t_cstr mpqName, base_provider baseProvider, stream_provider streamProvider, stream_flag stream);
-		static archive create(const std::shared_ptr<istream_provider_factory>& factory, t_cstr mpqName, mpq_create_flag flags, std::uint32_t maxFileCount);
-		static archive create(const std::shared_ptr<istream_provider_factory>& factory, t_cstr mpqName, const create_mpq& data);
-		static archive open(const std::shared_ptr<istream_provider_factory>& factory, const tstring& mpqName, base_provider baseProvider, stream_provider streamProvider, stream_flag stream);
-		static archive create(const std::shared_ptr<istream_provider_factory>& factory, const tstring& mpqName, mpq_create_flag flags, std::uint32_t maxFileCount);
-		static archive create(const std::shared_ptr<istream_provider_factory>& factory, const tstring& mpqName, const create_mpq& data);
 
 		HANDLE handle() const;
 
@@ -659,18 +657,16 @@ namespace stormlib
 		data* m_data;
 
 	public:
-		archive_read_file();
+		archive_read_file(const stormlib::archive& archive, a_cstr fileName);
+		archive_read_file(const stormlib::archive& archive, const astring& fileName);
 		archive_read_file(const archive_read_file& other);
 		archive_read_file(archive_read_file&& other);
 		archive_read_file& operator=(const archive_read_file& other);
 		archive_read_file& operator=(archive_read_file&& other);
 		~archive_read_file();
 
-		static archive_read_file open(const archive& archive, a_cstr fileName);
-		static archive_read_file open_local(a_cstr fileName);
-		static archive_read_file open(const archive& archive, const astring& fileName);
-		static archive_read_file open_local(const astring& fileName);
-
+		const stormlib::archive& archive() const;
+		stormlib::archive& archive();
 		HANDLE handle() const;
 
 		std::uint64_t file_size() const;
@@ -703,18 +699,17 @@ namespace stormlib
 		data* m_data;
 
 	public:
-		archive_write_file();
+		archive_write_file(const stormlib::archive& archive, a_cstr fileName, std::uint64_t fileTime, std::uint32_t fileSize, LCID locale, add_file_flag flags);
+		archive_write_file(const stormlib::archive& archive, const astring& fileName, std::uint64_t fileTime, std::uint32_t fileSize, LCID locale, add_file_flag flags);
 		archive_write_file(const archive_write_file& other);
 		archive_write_file(archive_write_file&& other);
 		archive_write_file& operator=(const archive_write_file& other);
 		archive_write_file& operator=(archive_write_file&& other);
 		~archive_write_file();
 
-		static archive_write_file create(const archive& archive, a_cstr fileName, std::uint64_t fileTime, std::uint32_t fileSize, LCID locale, add_file_flag flags);
-		static archive_write_file create(const archive& archive, const astring& fileName, std::uint64_t fileTime, std::uint32_t fileSize, LCID locale, add_file_flag flags);
-
+		const stormlib::archive& archive() const;
+		stormlib::archive& archive();
 		HANDLE handle() const;
-
 		std::uint32_t file_size() const;
 		std::uint32_t file_pointer() const;
 		LCID locale() const;
@@ -732,19 +727,19 @@ namespace stormlib
 		data* m_data;
 
 	public:
-		archive_enumerator();
+		archive_enumerator(const stormlib::archive& archive, a_cstr mask, a_cstr listFile);
+		archive_enumerator(const stormlib::archive& archive, a_cstr listFile);
+		archive_enumerator(const stormlib::archive& archive, const astring& mask, const astring& listFile);
+		archive_enumerator(const stormlib::archive& archive, const astring& listFile);
+		archive_enumerator(const stormlib::archive& archive);
 		archive_enumerator(const archive_enumerator& other);
 		archive_enumerator(archive_enumerator&& other);
 		archive_enumerator& operator=(const archive_enumerator& other);
 		archive_enumerator& operator=(archive_enumerator&& other);
 		~archive_enumerator();
 
-		static archive_enumerator create(const archive& archive, a_cstr mask, a_cstr listFile);
-		static archive_enumerator create(const archive& archive, a_cstr listFile);
-		static archive_enumerator create(const archive& archive, const astring& mask, const astring& listFile);
-		static archive_enumerator create(const archive& archive, const astring& listFile);
-		static archive_enumerator create(const archive& archive);
-
+		const stormlib::archive& archive() const;
+		stormlib::archive& archive();
 		HANDLE handle() const;
 		bool is_valid() const;
 		a_cstr file_name() const;
@@ -757,7 +752,7 @@ namespace stormlib
 		std::uint64_t file_time() const;
 		LCID locale() const;
 
-		bool next();
+		void next();
 	};
 
 	class listfile_enumerator final
@@ -768,19 +763,19 @@ namespace stormlib
 		data* m_data;
 
 	public:
-		listfile_enumerator();
+		listfile_enumerator(const stormlib::archive& archive, a_cstr mask, a_cstr listFile);
+		listfile_enumerator(const stormlib::archive& archive, a_cstr listFile);
+		listfile_enumerator(const stormlib::archive& archive, const astring& mask, const astring& listFile);
+		listfile_enumerator(const stormlib::archive& archive, const astring& listFile);
+		listfile_enumerator(const stormlib::archive& archive);
 		listfile_enumerator(const listfile_enumerator& other);
 		listfile_enumerator(listfile_enumerator&& other);
 		listfile_enumerator& operator=(const listfile_enumerator& other);
 		listfile_enumerator& operator=(listfile_enumerator&& other);
 		~listfile_enumerator();
 
-		static listfile_enumerator create(const archive& archive, a_cstr mask, a_cstr listFile);
-		static listfile_enumerator create(const archive& archive, a_cstr listFile);
-		static listfile_enumerator create(const archive& archive, const astring& mask, const astring& listFile);
-		static listfile_enumerator create(const archive& archive, const astring& listFile);
-		static listfile_enumerator create(const archive& archive);
-
+		const stormlib::archive& archive() const;
+		stormlib::archive& archive();
 		HANDLE handle() const;
 		bool is_valid() const;
 		a_cstr file_name() const;
@@ -793,7 +788,7 @@ namespace stormlib
 		std::uint64_t file_time() const;
 		LCID locale() const;
 
-		bool next();
+		void next();
 	};
 
 	class stormlib_exception : public std::exception
