@@ -1,1 +1,2 @@
 Fork of the original StormLib, containing a wrapper for c++ and the ability to open an mpq form an arbitrary source (aka. stream)
+Also a wrapper for the .NET framework can be found inside StormLib.Net (also with support for arbitrary sources)

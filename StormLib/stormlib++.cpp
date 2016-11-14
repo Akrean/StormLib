@@ -624,13 +624,13 @@ namespace stormlib
 		this->get()->factory.initialize(this->get()->context, factory);
 	}
 
-	archive::archive(const std::shared_ptr<istream_provider_factory>& factory, t_cstr mpqName, base_provider baseProvider, stream_provider streamProvider, stream_flag stream) :
+	archive::archive(const std::shared_ptr<istream_provider_factory>& factory, t_cstr mpqName, base_provider baseProvider, stream_provider streamProvider, stream_flag streamFlags, mpq_open_flag flags) :
 		m_data(nullptr)
 	{
 		this->m_data = new archive::data();
 		STORMLIB_PP_ARCHIVE_FUNC();
 		this->initialize(factory);
-		STORMLIB_PP_CHECK_CALL(SFileOpenArchive, SFileOpenArchive(this->get()->factory.get(), mpqName, 0, static_cast<DWORD>(baseProvider) | static_cast<DWORD>(streamProvider) | static_cast<DWORD>(stream), &this->get()->handle) != false);
+		STORMLIB_PP_CHECK_CALL(SFileOpenArchive, SFileOpenArchive(this->get()->factory.get(), mpqName, 0, static_cast<DWORD>(baseProvider) | static_cast<DWORD>(streamProvider) | static_cast<DWORD>(streamFlags) | static_cast<DWORD>(flags), &this->get()->handle) != false);
 	}
 
 	archive::archive(const std::shared_ptr<istream_provider_factory>& factory, t_cstr mpqName, mpq_create_flag flags, std::uint32_t maxFileCount) :
@@ -663,8 +663,8 @@ namespace stormlib
 		STORMLIB_PP_CHECK_CALL(SFileCreateArchive2, SFileCreateArchive2(this->get()->factory.get(), mpqName, &d, &this->get()->handle) != false);
 	}
 
-	archive::archive(const std::shared_ptr<istream_provider_factory>& factory, const tstring& mpqName, base_provider baseProvider, stream_provider streamProvider, stream_flag stream) :
-		archive(factory, mpqName.c_str(), baseProvider, streamProvider, stream)
+	archive::archive(const std::shared_ptr<istream_provider_factory>& factory, const tstring& mpqName, base_provider baseProvider, stream_provider streamProvider, stream_flag streamFlags, mpq_open_flag flags) :
+		archive(factory, mpqName.c_str(), baseProvider, streamProvider, streamFlags, flags)
 	{
 	}
 

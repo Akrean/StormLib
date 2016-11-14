@@ -571,10 +571,10 @@ namespace stormlib
 		void initialize(const std::shared_ptr<istream_provider_factory>& factory);
 
 	public:
-		archive(const std::shared_ptr<istream_provider_factory>& factory, t_cstr mpqName, base_provider baseProvider, stream_provider streamProvider, stream_flag stream);
+		archive(const std::shared_ptr<istream_provider_factory>& factory, t_cstr mpqName, base_provider baseProvider, stream_provider streamProvider, stream_flag streamFlags, mpq_open_flag flags);
 		archive(const std::shared_ptr<istream_provider_factory>& factory, t_cstr mpqName, mpq_create_flag flags, std::uint32_t maxFileCount);
 		archive(const std::shared_ptr<istream_provider_factory>& factory, t_cstr mpqName, const create_mpq& data);
-		archive(const std::shared_ptr<istream_provider_factory>& factory, const tstring& mpqName, base_provider baseProvider, stream_provider streamProvider, stream_flag stream);
+		archive(const std::shared_ptr<istream_provider_factory>& factory, const tstring& mpqName, base_provider baseProvider, stream_provider streamProvider, stream_flag streamFlags, mpq_open_flag flags);
 		archive(const std::shared_ptr<istream_provider_factory>& factory, const tstring& mpqName, mpq_create_flag flags, std::uint32_t maxFileCount);
 		archive(const std::shared_ptr<istream_provider_factory>& factory, const tstring& mpqName, const create_mpq& data);
 		archive(const stormlib::archive& other);
