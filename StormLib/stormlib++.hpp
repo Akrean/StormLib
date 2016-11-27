@@ -566,7 +566,7 @@ namespace stormlib
 		data* get();
 
 	private:
-		data* m_data;
+		std::shared_ptr<data> m_data;
 
 		void initialize(const std::shared_ptr<istream_provider_factory>& factory);
 
@@ -654,7 +654,7 @@ namespace stormlib
 	private:
 		struct data;
 
-		data* m_data;
+		std::shared_ptr<data> m_data;
 
 	public:
 		archive_read_file(const stormlib::archive& archive, a_cstr fileName);
@@ -696,7 +696,7 @@ namespace stormlib
 	private:
 		struct data;
 
-		data* m_data;
+		std::shared_ptr<data> m_data;
 
 	public:
 		archive_write_file(const stormlib::archive& archive, a_cstr fileName, std::uint64_t fileTime, std::uint32_t fileSize, LCID locale, add_file_flag flags);
@@ -724,7 +724,7 @@ namespace stormlib
 	private:
 		struct data;
 
-		data* m_data;
+		std::shared_ptr<data> m_data;
 
 	public:
 		archive_enumerator(const stormlib::archive& archive, a_cstr mask, a_cstr listFile);
@@ -760,7 +760,7 @@ namespace stormlib
 	private:
 		struct data;
 
-		data* m_data;
+		std::shared_ptr<data> m_data;
 
 	public:
 		listfile_enumerator(const stormlib::archive& archive, a_cstr mask, a_cstr listFile);

@@ -44,6 +44,8 @@
   #define _CRT_NON_CONFORMING_SWPRINTFS
   #endif
 
+  #define _CRTDBG_MAP_ALLOC
+  #include <crtdbg.h>
   #include <tchar.h>
   #include <assert.h>
   #include <ctype.h>

@@ -3,7 +3,13 @@
 #include <utility>
 #include "stormlib++.hpp"
 
-#define STORMLIB_PP_NORETURN	__declspec(noreturn) void
+#ifdef _DEBUG
+#	undef new
+#	define STORMLIB_PP_NEW	new(_NORMAL_BLOCK, __FILE__, __LINE__)
+#	define new STORMLIB_PP_NEW
+#endif
+
+#define STORMLIB_PP_NORETURN	[[noreturn]] void
 
 #define STORMLIB_PP_ARCHIVE_FUNC_IMPL(ptr)			local_exception_context lec((ptr)->get()->context)
 #define STORMLIB_PP_ARCHIVE_FUNC()					STORMLIB_PP_ARCHIVE_FUNC_IMPL(this)
@@ -22,21 +28,12 @@
 
 #define STORMLIB_PP_EXCEPTION_SWALLOWED	0x1000F
 
-#define STORMLIB_PP_MAKE_CTOR_DTOR(type)																\
-	type::type(const type& other) : m_data(other.m_data) { if(this->m_data) this->m_data->add_ref(); }	\
-	type::type(type&& other) : m_data(other.m_data) { other.m_data = nullptr; }							\
-	type& type::operator=(const type& other) {															\
-		if (this != &other) {																			\
-			if(this->m_data) this->m_data->release();													\
-			this->m_data = other.m_data;																\
-			if(this->m_data) this->m_data->add_ref(); }													\
-		return *this; }																					\
-	type& type::operator=(type&& other) {																\
-		if (this != &other) std::swap(this->m_data, other.m_data);										\
-		return *this; }																					\
-	type::~type() {																						\
-		if(this->m_data) this->m_data->release();														\
-		this->m_data = nullptr; }
+#define STORMLIB_PP_MAKE_CTOR_DTOR(type)													\
+	type::type(const type& other) : m_data(other.m_data) { }								\
+	type::type(type&& other) { m_data.swap(other.m_data); }									\
+	type& type::operator=(const type& other) { this->m_data = other.m_data; return *this; }	\
+	type& type::operator=(type&& other) { this->m_data.swap(other.m_data); return *this; }	\
+	type::~type() {	}
 
 namespace stormlib
 {
@@ -521,41 +518,6 @@ namespace stormlib
 				return this->m_factory ? &this->m_impl : nullptr;
 			}
 		};
-
-		struct base_data
-		{
-		private:
-			std::int32_t m_refCnt;
-
-		protected:
-			~base_data()
-			{
-				assert(this->m_refCnt == 0);
-			}
-
-		public:
-			base_data() :
-				m_refCnt(1)
-			{
-			}
-
-			base_data(const base_data&) = delete;
-			base_data(base_data&&) = delete;
-			base_data& operator=(const base_data&) = delete;
-			base_data& operator=(base_data&&) = delete;
-
-			void add_ref()
-			{
-				++this->m_refCnt;
-			}
-
-			void release()
-			{
-				assert(this->m_refCnt > 0);
-				--this->m_refCnt;
-				if (this->m_refCnt == 0) delete this;
-			}
-		};
 	}
 
 	create_mpq::create_mpq() :
@@ -583,7 +545,7 @@ namespace stormlib
 		return SFileSetLocale(newLocale);
 	}
 
-	struct archive::data final : public base_data
+	struct archive::data final
 	{
 		compact_callback compact_callback;
 		add_file_callback add_file_callback;
@@ -601,7 +563,6 @@ namespace stormlib
 		data& operator=(const data&) = delete;
 		data& operator=(data&&) = delete;
 
-	private:
 		~data()
 		{
 			if (this->handle != NULL) SFileCloseArchive(this->handle);
@@ -611,12 +572,12 @@ namespace stormlib
 
 	const archive::data* archive::get() const
 	{
-		return this->m_data;
+		return this->m_data.get();
 	}
 
 	archive::data* archive::get()
 	{
-		return this->m_data;
+		return this->m_data.get();
 	}
 
 	void archive::initialize(const std::shared_ptr<istream_provider_factory>& factory)
@@ -627,7 +588,7 @@ namespace stormlib
 	archive::archive(const std::shared_ptr<istream_provider_factory>& factory, t_cstr mpqName, base_provider baseProvider, stream_provider streamProvider, stream_flag streamFlags, mpq_open_flag flags) :
 		m_data(nullptr)
 	{
-		this->m_data = new archive::data();
+		this->m_data = std::make_shared<archive::data>();
 		STORMLIB_PP_ARCHIVE_FUNC();
 		this->initialize(factory);
 		STORMLIB_PP_CHECK_CALL(SFileOpenArchive, SFileOpenArchive(this->get()->factory.get(), mpqName, 0, static_cast<DWORD>(baseProvider) | static_cast<DWORD>(streamProvider) | static_cast<DWORD>(streamFlags) | static_cast<DWORD>(flags), &this->get()->handle) != false);
@@ -636,7 +597,7 @@ namespace stormlib
 	archive::archive(const std::shared_ptr<istream_provider_factory>& factory, t_cstr mpqName, mpq_create_flag flags, std::uint32_t maxFileCount) :
 		m_data(nullptr)
 	{
-		this->m_data = new archive::data();
+		this->m_data = std::make_shared<archive::data>();
 		STORMLIB_PP_ARCHIVE_FUNC();
 		this->initialize(factory);
 		STORMLIB_PP_CHECK_CALL(SFileCreateArchive, SFileCreateArchive(this->get()->factory.get(), mpqName, static_cast<DWORD>(flags), maxFileCount, &this->get()->handle) != false);
@@ -645,7 +606,7 @@ namespace stormlib
 	archive::archive(const std::shared_ptr<istream_provider_factory>& factory, t_cstr mpqName, const create_mpq& data) :
 		m_data(nullptr)
 	{
-		this->m_data = new archive::data();
+		this->m_data = std::make_shared<archive::data>();
 		STORMLIB_PP_ARCHIVE_FUNC();
 		this->initialize(factory);
 		SFILE_CREATE_MPQ d;
@@ -922,7 +883,7 @@ namespace stormlib
 		this->rename_file(oldFileName.c_str(), newFileName.c_str());
 	}
 
-	struct archive_read_file::data final : public base_data
+	struct archive_read_file::data final  
 	{
 	public:
 		stormlib::archive owner;
@@ -939,7 +900,6 @@ namespace stormlib
 		data& operator=(const data&) = delete;
 		data& operator=(data&&) = delete;
 
-	private:
 		~data()
 		{
 			if (this->handle) SFileCloseFile(this->handle);
@@ -950,7 +910,7 @@ namespace stormlib
 	archive_read_file::archive_read_file(const stormlib::archive& archive, a_cstr fileName) :
 		m_data(nullptr)
 	{
-		this->m_data = new archive_read_file::data(archive);
+		this->m_data = std::make_shared<archive_read_file::data>(archive);
 		STORMLIB_PP_READ_FILE_FUNC();
 		STORMLIB_PP_CHECK_CALL(SFileOpenFileEx, SFileOpenFileEx(this->m_data->owner.handle(), fileName, SFILE_OPEN_FROM_MPQ, &this->m_data->handle) != false);
 	}
@@ -1047,7 +1007,7 @@ namespace stormlib
 		size = static_cast<std::uint32_t>(len);
 	}
 
-	struct archive_write_file::data final : public base_data
+	struct archive_write_file::data final 
 	{
 	public:
 		stormlib::archive owner;
@@ -1071,7 +1031,6 @@ namespace stormlib
 		data& operator=(const data&) = delete;
 		data& operator=(data&&) = delete;
 
-	private:
 		~data()
 		{
 			if (this->handle != NULL) SFileFinishFile(this->handle);
@@ -1082,7 +1041,7 @@ namespace stormlib
 	archive_write_file::archive_write_file(const stormlib::archive& archive, a_cstr fileName, std::uint64_t fileTime, std::uint32_t fileSize, LCID locale, add_file_flag flags) :
 		m_data(nullptr)
 	{
-		this->m_data = new archive_write_file::data(archive);
+		this->m_data = std::make_shared<archive_write_file::data>(archive);
 		STORMLIB_PP_WRITE_FILE_FUNC();
 		STORMLIB_PP_CHECK_CALL(SFileCreateFile, SFileCreateFile(this->m_data->owner.handle(), fileName, fileTime, fileSize, locale, static_cast<DWORD>(flags), &this->m_data->handle) != false);
 		this->m_data->file_name = fileName;
@@ -1147,7 +1106,7 @@ namespace stormlib
 		this->m_data->handle = NULL;
 	}
 
-	struct archive_enumerator::data final : public base_data
+	struct archive_enumerator::data final 
 	{
 	public:
 		stormlib::archive owner;
@@ -1166,23 +1125,22 @@ namespace stormlib
 		data& operator=(const data&) = delete;
 		data& operator=(data&&) = delete;
 
+		~data()
+		{
+			this->close();
+		}
+
 		void close()
 		{
 			if (this->handle != NULL) SFileFindClose(this->handle);
 			this->handle = NULL;
-		}
-
-	private:
-		~data()
-		{
-			this->close();
 		}
 	};
 
 	archive_enumerator::archive_enumerator(const stormlib::archive& archive, a_cstr mask, a_cstr listFile) :
 		m_data(nullptr)
 	{
-		this->m_data = new archive_enumerator::data(archive);
+		this->m_data = std::make_shared<archive_enumerator::data>(archive);
 		STORMLIB_PP_ARCHIVE_ENUM_FUNC();
 		if (STORMLIB_PP_CHECK_CALL(SFileFindFirstFile, (this->m_data->handle = SFileFindFirstFile(this->m_data->owner.handle(), mask, &this->m_data->find_data, listFile)) != NULL, ERROR_NO_MORE_FILES) == ERROR_NO_MORE_FILES) {
 			this->m_data->close();
@@ -1297,7 +1255,7 @@ namespace stormlib
 		}
 	}
 
-	struct listfile_enumerator::data final : public base_data
+	struct listfile_enumerator::data final 
 	{
 	public:
 		stormlib::archive owner;
@@ -1316,23 +1274,22 @@ namespace stormlib
 		data& operator=(const data&) = delete;
 		data& operator=(data&&) = delete;
 
+		~data()
+		{
+			this->close();
+		}
+
 		void close()
 		{
 			if (this->handle != NULL) SListFileFindClose(this->handle);
 			this->handle = NULL;
-		}
-
-	private:
-		~data()
-		{
-			this->close();
 		}
 	};
 
 	listfile_enumerator::listfile_enumerator(const stormlib::archive& archive, a_cstr mask, a_cstr listFile) :
 		m_data(nullptr)
 	{
-		this->m_data = new listfile_enumerator::data(archive);
+		this->m_data = std::make_shared<listfile_enumerator::data>(archive);
 		STORMLIB_PP_LISTFILE_ENUM_FUNC();
 		if (STORMLIB_PP_CHECK_CALL(SListFileFindFirstFile, (this->m_data->handle = SListFileFindFirstFile(this->m_data->owner.handle(), listFile, mask, &this->m_data->find_data)) != NULL, ERROR_NO_MORE_FILES) == ERROR_NO_MORE_FILES) {
 			this->m_data->close();
